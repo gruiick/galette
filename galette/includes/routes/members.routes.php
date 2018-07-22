@@ -711,8 +711,8 @@ $app->get(
                     );
             }
         } else {
-            if ($member->id != $id) {
-                $member->load($this->login->id);
+            if (!$this->login->isAdmin() && !$this->login->isStaff()) {
+                $member->setParent($this->login->id);
             }
         }
 
@@ -849,8 +849,11 @@ $app->post(
                 );
             }
         } else {
-            $member->load($this->login->id);
-            $adherent['id_adh'] = $this->login->id;
+            //when adding a new member from a non privilegied accunt,
+            //then we're creating a child card.
+            if (!$this->login->isAdmin() && !$this->login->isStaff()) {
+                $post['parent'] = $this->login->id;
+            }
         }
 
         // flagging required fields

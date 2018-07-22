@@ -658,6 +658,20 @@ class Adherent
         return !empty($this->_parent);
     }
 
+
+    /**
+     * Set members parent
+     *
+     * @param integer $id Parent id
+     *
+     * @return Adherent
+     */
+    public function setParent(integer $id)
+    {
+        $this->parent = $id;
+        return $this;
+    }
+
     /**
      * Does member have children?
      *
@@ -1912,6 +1926,11 @@ class Adherent
     public function canEdit($login)
     {
         if ($this->id && $login->id == $this->id || $login->isAdmin() || $login->isStaff()) {
+            return true;
+        }
+
+        //parent can change their child cards
+        if ($this->hasParent() && $this->parent->id === $login->id) {
             return true;
         }
 
