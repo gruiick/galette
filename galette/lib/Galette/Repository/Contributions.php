@@ -361,9 +361,24 @@ class Contributions
             }
 
             $member_clause = null;
-            if ($this->filters->filtre_cotis_adh != null) {
-                $member_clause = $this->filters->filtre_cotis_adh;
-                if (!$this->login->isAdmin() && !$this->login->isStaff() && $value != $this->login->id) {
+            if ($this->filters->filtre_cotis_children !== false) {
+                $member_clause = [$this->login->id];
+                $member = new Adherent(
+                    $this->zdb,
+                    (int)$this->filters->filtre_cotis_children,
+                    [
+                        'picture'   => false,
+                        'groups'    => false,
+                        'dues'      => false,
+                        'children'  => true
+                    ]
+                );
+                foreach ($member->children as $child) {
+                    $member_clause[] = $child->id;
+                }
+            } elseif ($this->filters->filtre_cotis_adh != null) {
+                $member_clause = [$this->filters->filtre_cotis_adh];
+                if (!$this->login->isAdmin() && !$this->login->isStaff() && $this->filters->filtre_cotis_adh != $this->login->id) {
                     $member = new Adherent(
                         $this->zdb,
                         (int)$this->filters->filtre_cotis_adh,
@@ -382,7 +397,7 @@ class Contributions
                             ' without appropriate ACLs',
                             Analog::WARNING
                         );
-                        $member_clause = $this->login->id;
+                        $member_clause = [$this->login->id];
                     }
                 }
             } elseif (!$this->login->isAdmin() && !$this->login->isStaff()) {
@@ -406,6 +421,7 @@ class Contributions
                 __METHOD__ . ' | ' . $e->getMessage(),
                 Analog::WARNING
             );
+            throw $e;
         }
     }
 

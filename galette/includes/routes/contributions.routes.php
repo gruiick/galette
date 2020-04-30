@@ -116,25 +116,31 @@ $app->get(
                         $filters->filtre_cotis_adh = null;
                     } else {
                         if (!$this->login->isAdmin() && !$this->login->isStaff() && $value != $this->login->id) {
-                            $member = new Adherent(
-                                $this->zdb,
-                                (int)$value,
-                                [
-                                    'picture'   => false,
-                                    'groups'    => false,
-                                    'dues'      => false,
-                                    'parent'    => true
-                                ]
-                            );
-                            if (!$member->hasParent() ||
-                                $member->hasParent() && $member->parent->id != $this->login->id
-                            ) {
-                                Analog::log(
-                                    'Trying to display contributions for member #' . $value .
-                                    ' without appropriate ACLs',
-                                    Analog::WARNING
+                            if ($value == 'all') {
+                                $value = null;
+                                $filters->filtre_cotis_children = $this->login->id;
+                            } else {
+                                $member = new Adherent(
+                                    $this->zdb,
+                                    (int)$value,
+                                    [
+                                        'picture'   => false,
+                                        'groups'    => false,
+                                        'dues'      => false,
+                                        'parent'    => true
+                                    ]
                                 );
-                                $value = $this->login->id;
+                                if ($value == 'all') {
+                                } elseif (!$member->hasParent() ||
+                                    $member->hasParent() && $member->parent->id != $this->login->id
+                                ) {
+                                    Analog::log(
+                                        'Trying to display contributions for member #' . $value .
+                                        ' without appropriate ACLs',
+                                        Analog::WARNING
+                                    );
+                                    $value = $this->login->id;
+                                }
                             }
                         }
                         $filters->filtre_cotis_adh = $value;
@@ -171,6 +177,20 @@ $app->get(
             $member->load($filters->filtre_cotis_adh);
             $tpl_vars['member'] = $member;
         }
+        if ($filters->filtre_cotis_children != false) {
+            $member = new Adherent(
+                $this->zdb,
+                $filters->filtre_cotis_children,
+                [
+                    'picture'   => false,
+                    'groups'    => false,
+                    'dues'      => false,
+                    'parent'    => true
+                ]
+            );
+            $tpl_vars['pmember'] = $member;
+        }
+
 
         // display page
         $this->view->render(
